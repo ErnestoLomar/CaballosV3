@@ -7,10 +7,6 @@
 #
 ##########################################
 
-
-#########################################
-#               Librerías               #
-#########################################
 import cv2
 import numpy as np
 import imutils
@@ -19,78 +15,31 @@ import sys
 import time
 from PyQt5 import uic, QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QApplication, QDialog, QGraphicsOpacityEffect
-#########################################
-
-
-#########################################
-#  Declaración de variables booleanas   #
-#########################################
 
 programa_activo = True
-
-#########################################
-
-
-#########################################
-#  Declaración de variables de cadena   #
-#########################################
 
 xy_uno = "380,120"
 xy_dos = "380,480"
 ultimo_dato_vuelta = ""
 carpeta_fotos = 'Fotos'
 
-#########################################
-
-
-#########################################
-#  DEeclaración de variables numéricas  #
-#########################################
-
 numero_de_caballo = 0
-
-#########################################
-
-
-#########################################
-#    Declaración de variables float     #
-#########################################
 
 global valor_area
 valor_area = 500.0
-
-#########################################
-
-
-#########################################
-#       Declaración de arreglos         #
-#########################################
 
 global numero
 numero = ['+52']
 global numero_area
 numero_area = []
 
-#########################################
-
-
-#########################################
-# Declaración de variables de librería  #
-#########################################
-
 inicio_banner = time.time()
-
-#########################################
 
 class principal(QMainWindow):
 
   def __init__(self):
     super().__init__()
     uic.loadUi("ventana_principal.ui", self)
-
-    #########################################
-    #  Declariación de instancias de clase  #
-    #########################################
 
     global ventana_linea_meta
     ventana_linea_meta = linea_meta()
@@ -99,13 +48,6 @@ class principal(QMainWindow):
     dialog_estadistica = ventana_estadisticas(self)
 
     ventana_calibrar = ventana_calibrar_area(self)
-
-    #########################################
-
-
-    #########################################
-    #  Declaración de eventos de botones    #
-    #########################################
     
     self.btn_detectar.clicked.connect(self.deteccion)
     self.btn_terminar.clicked.connect(self.terminar_deteccion)
@@ -113,21 +55,12 @@ class principal(QMainWindow):
     self.btn_linea_de_meta.clicked.connect(ventana_linea_meta.mostrar_ventana_linea)
     self.btn_estadisticas.clicked.connect(dialog_estadistica.show)
 
-    #########################################
-
-
-    #########################################
-    #     Eventos de la parte FrontEnd      #
-    #########################################
-
     self.btn_terminar.hide()
     self.titulo_numero_vuelta_1.hide()
     self.titulo_numero_vuelta_2.hide()
     self.titulo_numero_vuelta_3.hide()
     self.titulo_numero_vuelta_4.hide()
     self.titulo_numero_vuelta_5.hide()
-
-    #########################################
     
 
   #Creamos la función para terminar la detección de movimiento.
