@@ -21,7 +21,7 @@ programa_activo = True
 xy_uno = "380,120"
 xy_dos = "380,480"
 ultimo_dato_vuelta = ""
-carpeta_fotos = 'Fotos'
+carpeta_fotos = 'Photos'
 
 numero_de_caballo = 0
 
