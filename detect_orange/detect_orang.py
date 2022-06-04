@@ -6,6 +6,8 @@ hsv_orange_max1 = np.array([15,255,255], np.uint8)
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
+i = 0
+
 while (cap.isOpened()):
     ret, frame = cap.read()
     if ret == False:
@@ -13,13 +15,16 @@ while (cap.isOpened()):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, hsv_orange_min1, hsv_orange_max1)
 
-    cnts, chain = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
 
-    c = max(cnts, key=cv2.contourArea)
+    for c in cnts:
+        
+        area = cv2.contourArea(c)
 
-    x,y,w,h = cv2.boundingRect(c)
+        if area > 1000:
 
-    cv2.rectangle(frame, (x,y), (x+w,y+h), (0,0,255),2)
+            x,y,w,h = cv2.boundingRect(c)
+            #cv2.drawContours(frame, (x+w,y+h), -1, (0,0,255), 2)
 
     cv2.imshow("Frame", mask)
     cv2.imshow("Frame2s", frame)

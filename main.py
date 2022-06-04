@@ -39,15 +39,15 @@ class principal(QMainWindow):
 
   def __init__(self):
     super().__init__()
-    uic.loadUi("ventana_principal.ui", self)
+    uic.loadUi("main_window.ui", self)
 
     global ventana_linea_meta
-    ventana_linea_meta = linea_meta()
+    ventana_linea_meta = finish_line_window()
 
     global dialog_estadistica
-    dialog_estadistica = ventana_estadisticas(self)
+    dialog_estadistica = statistics_window(self)
 
-    ventana_calibrar = ventana_calibrar_area(self)
+    ventana_calibrar = area_window(self)
     
     self.btn_detectar.clicked.connect(self.deteccion)
     self.btn_terminar.clicked.connect(self.terminar_deteccion)
@@ -114,9 +114,9 @@ class principal(QMainWindow):
     
     #Instancias de clases.
     global dialog_esperando
-    dialog_esperando = ventana_esperando(self)
+    dialog_esperando = waiting_window(self)
     global programa_activo
-    dialog_foto = ventana_foto(self)
+    dialog_foto = popup_window(self)
     
     #Variables booleanas.
     programa_activo = True
@@ -336,29 +336,29 @@ class principal(QMainWindow):
         break
     cap.release()
 
-class ventana_foto(QDialog):
+class popup_window(QDialog):
   def __init__(self, *args, **kwargs):
-    super(ventana_foto, self).__init__(*args, **kwargs)
-    uic.loadUi("fotografia.ui", self)
+    super(popup_window, self).__init__(*args, **kwargs)
+    uic.loadUi("pop-up_capture.ui", self)
     self.label_foto.setScaledContents(True)
 
-class ventana_esperando(QDialog):
+class waiting_window(QDialog):
   def __init__(self, *args, **kwargs):
-    super(ventana_esperando, self).__init__(*args, **kwargs)
-    uic.loadUi("ventana_esperando.ui", self)
+    super(waiting_window, self).__init__(*args, **kwargs)
+    uic.loadUi("waiting_window.ui", self)
 
-class ventana_estadisticas(QDialog):
+class statistics_window(QDialog):
   def __init__(self, *args, **kwargs):
-    super(ventana_estadisticas, self).__init__(*args, **kwargs)
-    uic.loadUi("ventana_estadisticas.ui", self)
+    super(statistics_window, self).__init__(*args, **kwargs)
+    uic.loadUi("statistics_window.ui", self)
     self.btn_regresar.clicked.connect(self.close)
 
-class linea_meta(QDialog):
+class finish_line_window(QDialog):
   def __init__(self, *args, **kwargs):
     global count_linea
     count_linea = 1
-    super(linea_meta, self).__init__(*args, **kwargs)
-    uic.loadUi("linea_meta.ui", self)
+    super(finish_line_window, self).__init__(*args, **kwargs)
+    uic.loadUi("finish_line_window.ui", self)
     self.setWindowFlags(QtCore.Qt.CustomizeWindowHint)
     self.btn_meta_lista.clicked.connect(self.meta_lista)
     self.btn_cancelar_linea.clicked.connect(self.meta_lista)
@@ -401,25 +401,6 @@ class linea_meta(QDialog):
   def leaveEvent(self, event):
       QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ArrowCursor)
 
-  # global on_EVENT_LBUTTONDOWN
-  # def on_EVENT_LBUTTONDOWN(event, x, y, flags, param):
-  #   if event == cv2.EVENT_LBUTTONDOWN:
-  #       xy="%d,%d" % (x, y)
-  #       global count_linea
-  #       if count_linea == 1:
-  #         global xy_uno
-  #         xy_uno = "%d,%d" % (x, y)
-  #         count_linea+=1
-  #       elif count_linea == 2:
-  #         global xy_dos 
-  #         xy_dos = "%d,%d" % (x, y)
-  #         cv2.line(frame21, (int(xy_uno.split(sep=',')[0]), int(xy_uno.split(sep=',')[1])), (int(xy_dos.split(sep=',')[0]), int(xy_dos.split(sep=',')[1])), (0, 255, 0), 3)
-  #         #time.sleep(5)
-  #         count_linea=1
-  #       cv2.circle(frame21, (x, y), 1, (255, 0, 0), thickness = -1)
-  #       cv2.putText(frame21, xy, (x, y), cv2.FONT_HERSHEY_PLAIN,
-  #                   1.0, (0,0,0), thickness = 1)
-
   def meta_lista(self):
     global flag_editar_linea
     flag_editar_linea = False
@@ -456,10 +437,10 @@ class linea_meta(QDialog):
         break
     camara_frame.release()
 
-class ventana_calibrar_area(QDialog):
+class area_window(QDialog):
   def __init__(self, *args, **kwargs):
-    super(ventana_calibrar_area, self).__init__(*args, **kwargs)
-    uic.loadUi("ventana_calibrar_area.ui", self)
+    super(area_window, self).__init__(*args, **kwargs)
+    uic.loadUi("area_window.ui", self)
     self.btn_editar_area.clicked.connect(self.calibrar)
     self.label_area_actual.setText(f"El area actual es de: {valor_area}")
     self.btn_0.clicked.connect(self.agregar_cero)
