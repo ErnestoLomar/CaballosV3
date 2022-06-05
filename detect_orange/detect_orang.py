@@ -21,10 +21,10 @@ while (cap.isOpened()):
         
         area = cv2.contourArea(c)
 
-        if area > 1000:
+        if area > 3000:
 
-            x,y,w,h = cv2.boundingRect(c)
-            #cv2.drawContours(frame, (x+w,y+h), -1, (0,0,255), 2)
+            nuevo_contorno = cv2.convexHull(c)
+            cv2.drawContours(frame, [nuevo_contorno], 0, (255,0,0), 3)
 
     cv2.imshow("Frame", mask)
     cv2.imshow("Frame2s", frame)
