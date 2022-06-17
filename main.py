@@ -1,7 +1,7 @@
 ##########################################
 # Autor: Ernesto Lomar
 # Fecha de creación: 19/01/2022
-# Ultima modificación: 22/05/2022
+# Ultima modificación: 06/06/2022
 # 
 # Software Carrera de barriles
 #
@@ -28,10 +28,10 @@ numero_de_caballo = 0
 global valor_area
 valor_area = 500.0
 
-global numero
-numero = ['+52']
 global numero_area
 numero_area = []
+hsv_orange_min1 = np.array([10, 100,20], np.uint8)
+hsv_orange_max1 = np.array([15,255,255], np.uint8)
 
 inicio_banner = time.time()
 
@@ -54,6 +54,8 @@ class principal(QMainWindow):
     self.btn_abrir_calibrar.clicked.connect(ventana_calibrar.show)
     self.btn_linea_de_meta.clicked.connect(ventana_linea_meta.mostrar_ventana_linea)
     self.btn_estadisticas.clicked.connect(dialog_estadistica.show)
+    self.btn_apagar.clicked.connect(self.apagar_disp)
+    self.btn_reiniciar.clicked.connect(self.reiniciar_disp)
 
     self.btn_terminar.hide()
     self.titulo_numero_vuelta_1.hide()
@@ -61,7 +63,12 @@ class principal(QMainWindow):
     self.titulo_numero_vuelta_3.hide()
     self.titulo_numero_vuelta_4.hide()
     self.titulo_numero_vuelta_5.hide()
-    
+
+  def apagar_disp():
+    os.system("sudo shutdown now")
+
+  def reiniciar_disp():
+    os.system("sudo reboot")
 
   #Creamos la función para terminar la detección de movimiento.
   def terminar_deteccion(self):
@@ -109,8 +116,6 @@ class principal(QMainWindow):
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW);
     fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-
-    #Declaramos variables locales de la función.
     
     #Instancias de clases.
     global dialog_esperando
@@ -142,6 +147,7 @@ class principal(QMainWindow):
 
     while(programa_activo):
 
+      # Hacemos la validación de si el cronometro esta activo
       if cronometro_activo:
         final_temporal = time.time()
         k = f"{final_temporal - inicio}"
@@ -174,15 +180,11 @@ class principal(QMainWindow):
           milesimas = valor_tiempo[5:6]
 
       if ventana_activa:
-        final2 = time.time()
-        #print(f"Tiempo popup: {round(final2 - inicio, 1)}")
         if float(valor_tiempo) >= 3.00:
           dialog_foto.close()
           ventana_activa = False
 
       if tiempo_de_espera:
-            final_espera = time.time()
-            #print(f"Tiempo de espera: {round(final_espera - inicio_espera, 1)}")
             if float(valor_tiempo) >= 3.00:
               tiempo_de_espera = False
 
@@ -190,23 +192,10 @@ class principal(QMainWindow):
       frame2 = imutils.resize(frame, width=480)
       if ret==False:break
 
-      #CHECAR COORDENADAS DE LA PARTE DE LA IZQUIERDA PORQUE SE VA MUY LARGO
+      gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
 
-      area_pts = np.array([[int(xy_uno.split(sep=',')[0])+40, int(xy_uno.split(sep=',')[1])], [frame2.shape[1]-(int(xy_uno.split(sep=',')[0])), int(xy_uno.split(sep=',')[1])], 
-      [frame2.shape[1]-(int(xy_dos.split(sep=',')[0])), int(xy_dos.split(sep=',')[1])], [int(xy_dos.split(sep=',')[0])+40, int(xy_dos.split(sep=',')[1])]])
-      
-      cv2.drawContours(frame2, [area_pts], -1, (0, 0, 255), 2)
-      cv2.line(frame2, (int(xy_uno.split(sep=',')[0]), int(xy_uno.split(sep=',')[1])), (int(xy_dos.split(sep=',')[0]), int(xy_dos.split(sep=',')[1])), (0, 255, 255), 1)
-
-      imAux = np.zeros(shape=(frame2.shape[:2]), dtype=np.uint8)
-      imAux = cv2.drawContours(imAux, [area_pts], -1, (255), -1)
-      image_area = cv2.bitwise_and(frame2, frame2, mask=imAux)
-
-
-      fgmask = fgbg.apply(image_area)
-      fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_OPEN, kernel)
-      fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)
-      fgmask = cv2.dilate(fgmask, None, iterations=1)
+      hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+      mask = cv2.inRange(hsv, hsv_orange_min1, hsv_orange_max1)
 
       if count == 0:
         dialog_esperando.show()
@@ -215,122 +204,121 @@ class principal(QMainWindow):
         dialog_esperando.close()
 
       if i == 10:
+        bgGray = gray
         inicio = time.time()
         cronometro_activo = True
 
-
       if i > 10:
 
-        contornos = cv2.findContours(fgmask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+        cntsNaranja = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
 
-        for c in contornos:
-          #print("no se detecta movimiento")
-          area = cv2.contourArea(c)
-          # print(f"El area es: {area}")
-          if area >= valor_area and tiempo_de_espera == False:
-            #print(f"El area es: {area}")
-            #print("se detecta movimiento")
-            x,y,w,h = cv2.boundingRect(c)
-            #cv2.rectangle(frame, (x,y), (x+w,y+h),(0,255,0))
-            if (int(xy_uno.split(sep=',')[0])-20) < (x + w) < (int(xy_dos.split(sep=',')[0])+20):
-              #print(f"----------------El area GANADORA es: {area}")
-              #print("Detectado")
-              cv2.line(frame2, (int(xy_uno.split(sep=',')[0]), int(xy_uno.split(sep=',')[1])), 
-              (int(xy_dos.split(sep=',')[0]), int(xy_dos.split(sep=',')[1])), (0, 255, 0), 3)
-            
-              objeto = frame
+        for cc in cntsNaranja:
+          areaNaranja = cv2.contourArea(cc)
+          #print(f"Area naranja: {areaNaranja}")
+          if areaNaranja <=50000:
+                bgGray = gray
+          if areaNaranja > 80000:
+            print(f"El area naranja encontrada es: {areaNaranja}")
+            nuevo_contorno = cv2.convexHull(cc)
+            cv2.drawContours(frame, [nuevo_contorno], 0, (255,0,0), 3)
 
-              final = time.time()
+            dif = cv2.absdiff(gray, bgGray)
+            _, th = cv2.threshold(dif, 40, 255, cv2.THRESH_BINARY)
 
-              #print(f"La vuelta tardó {valor_tiempo} segundos.")
-              tiempoDeVuelta = valor_tiempo
+            contornos = cv2.findContours(th, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
 
-              cv2.imwrite(carpeta_fotos+'/vuelta_{}.jpg'.format(count),objeto)
-              #print('Imagen almacenada: ', 'vuelta_{}.jpg'.format(count))
+            for c in contornos:
+              area = cv2.contourArea(c)
 
-              hora_actual = time.ctime()
-              hora_actual = hora_actual.split()
+              if area <=100:
+                bgGray = gray
+              if area >= valor_area and tiempo_de_espera == False:
+                print(f"El area es: {area}")
+                print("se detecta movimiento")
+              
+                objeto = frame
 
-              #print(hora_actual[3])
+                cv2.imwrite(carpeta_fotos+'/vuelta_{}.jpg'.format(count),objeto)
 
+                hora_actual = time.ctime()
+                hora_actual = hora_actual.split()
 
-              if count == 0:
-                dialog_foto.label_foto.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count)))
-                self.label_frame_1.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(0)))
-                self.titulo_numero_vuelta_1.show()
-                self.titulo_numero_vuelta_1.setText(f'INICIO')
-                #global numero_de_caballo
-                #dialog_estadistica.titulo_estadisticas.setText(f'Estadísticas caballo {numero_de_caballo}')
-                dialog_estadistica.lista_tiempos.addItem("************************************************************")
-                dialog_estadistica.lista_tiempos.addItem(f"Caballo {numero_de_caballo} - COMIENZO DEL CRONÓMETRO - hora: {hora_actual[3]}")
-                dialog_foto.label_tiempo.setStyleSheet("QLabel{\n"
-"    \n"
-"    font: 20pt \"Tw Cen MT Condensed Extra Bold\";\n"
-"    color: rgb(255,255, 255);\n"
-"}")
-                dialog_foto.label_tiempo.setText("COMIENZO DEL CRONÓMETRO")
-              else:
-                if numero_de_frame == 2:
-                  self.label_frame_2.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(1)))
-                  self.titulo_numero_vuelta_2.show()
-                  self.titulo_numero_vuelta_2.setText('Vuelta 1')
-                if numero_de_frame == 3:
-                  self.label_frame_3.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(2)))
-                  self.titulo_numero_vuelta_3.show()
-                  self.titulo_numero_vuelta_3.setText('Vuelta 2')
-                if numero_de_frame == 4:
-                  self.label_frame_4.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(3)))
-                  self.titulo_numero_vuelta_4.show()
-                  self.titulo_numero_vuelta_4.setText('Vuelta 3')
-                if numero_de_frame == 5:
-                  self.label_frame_5.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(4)))
-                  self.titulo_numero_vuelta_5.show()
-                  self.titulo_numero_vuelta_5.setText('Vuelta 4')
-                if numero_de_frame > 5:
-                  self.label_frame_5.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count)))
-                  self.titulo_numero_vuelta_5.setText(f'Vuelta {count}')
-                  self.label_frame_4.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-1)))
-                  self.titulo_numero_vuelta_4.setText(f'Vuelta {count-1}')
-                  self.label_frame_3.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-2)))
-                  self.titulo_numero_vuelta_3.setText(f'Vuelta {count-2}')
-                  self.label_frame_2.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-3)))
-                  self.titulo_numero_vuelta_2.setText(f'Vuelta {count-3}')
-                  self.label_frame_1.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-4)))
-                  self.titulo_numero_vuelta_1.setText(f'Vuelta {count-4}')
+                if count == 0:
+                  dialog_foto.label_foto.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count)))
+                  self.label_frame_1.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(0)))
+                  self.titulo_numero_vuelta_1.show()
+                  self.titulo_numero_vuelta_1.setText(f'INICIO')
+                  dialog_estadistica.lista_tiempos.addItem("************************************************************")
+                  dialog_estadistica.lista_tiempos.addItem(f"Caballo {numero_de_caballo} - COMIENZO DEL CRONÓMETRO - hora: {hora_actual[3]}")
+                  dialog_foto.label_tiempo.setStyleSheet("QLabel{\n"
+    "    \n"
+    "    font: 20pt \"Tw Cen MT Condensed Extra Bold\";\n"
+    "    color: rgb(255,255, 255);\n"
+    "}")
+                  dialog_foto.label_tiempo.setText("COMIENZO DEL CRONÓMETRO")
+                else:
+                  if numero_de_frame == 2:
+                    self.label_frame_2.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(1)))
+                    self.titulo_numero_vuelta_2.show()
+                    self.titulo_numero_vuelta_2.setText('Vuelta 1')
+                  if numero_de_frame == 3:
+                    self.label_frame_3.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(2)))
+                    self.titulo_numero_vuelta_3.show()
+                    self.titulo_numero_vuelta_3.setText('Vuelta 2')
+                  if numero_de_frame == 4:
+                    self.label_frame_4.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(3)))
+                    self.titulo_numero_vuelta_4.show()
+                    self.titulo_numero_vuelta_4.setText('Vuelta 3')
+                  if numero_de_frame == 5:
+                    self.label_frame_5.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(4)))
+                    self.titulo_numero_vuelta_5.show()
+                    self.titulo_numero_vuelta_5.setText('Vuelta 4')
+                  if numero_de_frame > 5:
+                    self.label_frame_5.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count)))
+                    self.titulo_numero_vuelta_5.setText(f'Vuelta {count}')
+                    self.label_frame_4.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-1)))
+                    self.titulo_numero_vuelta_4.setText(f'Vuelta {count-1}')
+                    self.label_frame_3.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-2)))
+                    self.titulo_numero_vuelta_3.setText(f'Vuelta {count-2}')
+                    self.label_frame_2.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-3)))
+                    self.titulo_numero_vuelta_2.setText(f'Vuelta {count-3}')
+                    self.label_frame_1.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count-4)))
+                    self.titulo_numero_vuelta_1.setText(f'Vuelta {count-4}')
 
-                dialog_foto.label_foto.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count)))
-                dialog_foto.label_tiempo.setStyleSheet("QLabel{\n"
-"    \n"
-"    font: 97 36pt \"Arial black\";\n"
-"    color: rgb(255,255, 255);\n"
-"}")
-                dialog_foto.label_tiempo.setText(tiempo_actual)
-                dialog_foto.label_numero_vuelta.setText(f"Vuelta {count}")
-                dialog_estadistica.lista_tiempos.addItem(f"Vuelta {count} - {tiempo_actual} - hora: {hora_actual[3]}")
-                global ultimo_dato_vuelta
-                ultimo_dato_vuelta = f"Vuelta {count} - {tiempo_actual} - hora: {hora_actual[3]}"
+                  dialog_foto.label_foto.setPixmap(QtGui.QPixmap(carpeta_fotos+'/vuelta_{}.jpg'.format(count)))
+                  dialog_foto.label_tiempo.setStyleSheet("QLabel{\n"
+    "    \n"
+    "    font: 97 36pt \"Arial black\";\n"
+    "    color: rgb(255,255, 255);\n"
+    "}")
+                  dialog_foto.label_tiempo.setText(tiempo_actual)
+                  dialog_foto.label_numero_vuelta.setText(f"Vuelta {count}")
+                  dialog_estadistica.lista_tiempos.addItem(f"Vuelta {count} - {tiempo_actual} - hora: {hora_actual[3]}")
+                  global ultimo_dato_vuelta
+                  ultimo_dato_vuelta = f"Vuelta {count} - {tiempo_actual} - hora: {hora_actual[3]}"
 
-              dialog_foto.show()
-              numero_de_frame +=1
+                dialog_foto.show()
+                numero_de_frame +=1
 
 
-              inicio = time.time()
-              minutos = 0
-              horas = 0
-            
-              ventana_activa = True
+                inicio = time.time()
+                minutos = 0
+                horas = 0
+              
+                ventana_activa = True
 
-            
-              tiempo_de_espera = True
-              inicio_espera = time.time()            
+              
+                tiempo_de_espera = True
+                inicio_espera = time.time()            
 
-              count+=1
+                count+=1
 
-      #cv2.imshow('Detectando...', frame2)
-      #cv2.imshow('Detectando...', frame2)
-      #cv2.imshow("fgmask",fgmask)
+      cv2.imshow('Detectando...', frame2)
+      if i > 10:
+        cv2.imshow("fgmask",mask)
 
-      i = i +1
+      i+=1
+      #print(i)
       k = cv2.waitKey(1)
       if k == 27:
         break
@@ -362,16 +350,13 @@ class finish_line_window(QDialog):
     self.setWindowFlags(QtCore.Qt.CustomizeWindowHint)
     self.btn_meta_lista.clicked.connect(self.meta_lista)
     self.btn_cancelar_linea.clicked.connect(self.meta_lista)
-    #self.btn_meta_lista.clicked.connect(self.close)
     self.setMouseTracking(True)
     self.opacity_effect_r = QGraphicsOpacityEffect()
     self.opacity_effect_g = QGraphicsOpacityEffect()
   
-        # setting opacity level
     self.opacity_effect_r.setOpacity(0.3)
     self.opacity_effect_g.setOpacity(0.3)
   
-        # adding opacity effect to the label
     self.label_rojo.setGraphicsEffect(self.opacity_effect_r)
     self.label_verde.setGraphicsEffect(self.opacity_effect_g)
     if not os.path.exists('fotogramas'):
@@ -423,10 +408,6 @@ class finish_line_window(QDialog):
 
       global frame21
       frame21 = imutils.resize(frame, width=480)
-      
-      # cv2.namedWindow('Object Tracker')
-      # cv2.setMouseCallback("Object Tracker", on_EVENT_LBUTTONDOWN)
-
 
       if ret==False:break
       cv2.imwrite('fotogramas/fotograma_{}.jpg'.format(count),frame21)
